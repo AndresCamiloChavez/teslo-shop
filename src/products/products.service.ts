@@ -58,15 +58,28 @@ export class ProductsService {
         .where(`title ILIKE :title or slug ILIKE :slug`, {
           title: term,
           slug: term,
-        },)
+        })
         .getOne();
     }
     if (!product) throw new NotFoundException(`Product with ${term} not found`);
     return product;
   }
 
-  update(id: number, updateProductDto: UpdateProductDto) {
-    return `This action updates a #${id} product`;
+  async update(id: string, updateProductDto: UpdateProductDto) {
+    try {
+      const product = await this.productRepository.preload({
+        // buscate un producto por el id y agregale las propiedades del dto
+        id: id,
+        ...updateProductDto,
+      });
+
+      if (!product) throw new NotFoundException(`No found product with ${id}`);
+
+      await this.productRepository.save(product);
+      return product;
+    } catch (error) {
+      this.handleDBExceptions(error);
+    }
   }
 
   async remove(id: string) {
