@@ -1,3 +1,4 @@
+import { NotFoundException } from '@nestjs/common';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { BadRequestException } from '@nestjs/common/exceptions';
 import { Logger } from '@nestjs/common/services';
@@ -26,20 +27,32 @@ export class ProductsService {
     }
   }
 
-  findAll() {
-    return `This action returns all products`;
+  async findAll() {
+    try {
+      const products = this.productRepository.find();
+      return products;
+    } catch (error) {
+      this.logger.error(error);
+      throw new InternalServerErrorException(
+        'Unexpected error, check server logs',
+      );
+    }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} product`;
+  async findOne(term: string) {
+    const product = await this.productRepository.findOneBy({ id: term });
+    if (!product)
+      throw new NotFoundException(`Product with id ${term} not found`);
+    return product;
   }
 
   update(id: number, updateProductDto: UpdateProductDto) {
     return `This action updates a #${id} product`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} product`;
+  async remove(id: string) {
+    const product =  await this.findOne(id);
+    await this.productRepository.remove(product);
   }
 
   private handleDBExceptions(error: any) {
