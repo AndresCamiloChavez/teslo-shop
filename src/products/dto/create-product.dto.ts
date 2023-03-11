@@ -33,5 +33,4 @@ export class CreateProductDto {
 
     @IsIn(['men','women', 'kid', 'unisex'])
     gender: string;
-
 }
