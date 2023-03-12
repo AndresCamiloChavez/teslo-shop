@@ -15,4 +15,6 @@
 ```
   docker compose up -d
 ```
-7. Iniciar ``` yarn start:dev ``` 
+7. Ejecutar Seed (llenar base de datos )
+ ``` http://localhost:3000/api/v1/seed ``` 
+8. Iniciar ``` yarn start:dev ``` 
