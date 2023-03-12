@@ -54,10 +54,10 @@ export class Product {
 
   tags: string[];
 
-  @OneToMany(
+  @OneToMany( // es una relación
     () => ProductImage,
     (productImage) => productImage.product,
-    {cascade: true}
+    {cascade: true, eager: true} // va a carga las imagenes
   )
   images?: ProductImage[];
 

@@ -27,12 +27,12 @@ export class ProductsService {
       const { images = [], ...productDetails } = createProductDto;
       const product = this.productRepository.create({
         ...productDetails,
-        images: images.map((img) =>
-          this.productImageRepository.create({ url: img }), // TYPEORM infiere y relaciona la imagen con el producto
+        images: images.map(
+          (img) => this.productImageRepository.create({ url: img }), // TYPEORM infiere y relaciona la imagen con el producto
         ),
       }); // se guarda en momoria
       await this.productRepository.save(product); // ya se, tanto el producto como las imágenes guarda en base datos
-      return product;
+      return { ...product, images };
     } catch (error) {
       this.handleDBExceptions(error);
     }
@@ -40,19 +40,18 @@ export class ProductsService {
 
   async findAll(paginatioDto: PaginationDto) {
     const { limit = 10, offset = 0 } = paginatioDto;
-    try {
-      const products = this.productRepository.find({
-        take: limit,
-        skip: offset,
-        //TODO RELACIONES
-      });
-      return products;
-    } catch (error) {
-      this.logger.error(error);
-      throw new InternalServerErrorException(
-        'Unexpected error, check server logs',
-      );
-    }
+    const products = await this.productRepository.find({
+      take: limit,
+      skip: offset,
+      relations: {
+        images: true, // se puede especificar los campos en las opciones
+      },
+    });
+
+    return products.map((product) => ({
+      ...product,
+      images: product.images.map((img) => img.url),
+    }));
   }
 
   async findOne(term: string) {
@@ -62,12 +61,13 @@ export class ProductsService {
       product = await this.productRepository.findOneBy({ id: term });
     } else {
       // product = await this.productRepository.findOneBy({ slug: term });
-      const queryBuilder = this.productRepository.createQueryBuilder();
+      const queryBuilder = this.productRepository.createQueryBuilder('prod');
       product = await queryBuilder
         .where(`title ILIKE :title or slug ILIKE :slug`, {
           title: term,
           slug: term,
         })
+        .leftJoinAndSelect('prod.images', 'prodImages')
         .getOne();
     }
     if (!product) throw new NotFoundException(`Product with ${term} not found`);
@@ -95,6 +95,15 @@ export class ProductsService {
   async remove(id: string) {
     const product = await this.findOne(id);
     await this.productRepository.remove(product);
+  }
+
+  async findOneClean(term: string){
+    const {images = [], ...product} = await this.findOne(term);
+
+    return {
+      ...product,
+      images: images.map(img => img.url)
+    };
   }
 
   private handleDBExceptions(error: any) {
