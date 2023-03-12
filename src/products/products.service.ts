@@ -6,9 +6,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
-import { Product } from './entities/product.entity';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { validate as isUUID } from 'uuid';
+import { Product, ProductImage } from './entities';
+import { url } from 'inspector';
 
 @Injectable()
 export class ProductsService {
@@ -17,12 +18,20 @@ export class ProductsService {
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    @InjectRepository(ProductImage)
+    private readonly productImageRepository: Repository<ProductImage>,
   ) {}
 
   async create(createProductDto: CreateProductDto) {
     try {
-      const product = this.productRepository.create(createProductDto); // se guarda en momoria
-      await this.productRepository.save(product); // ya se guarda en base datos
+      const { images = [], ...productDetails } = createProductDto;
+      const product = this.productRepository.create({
+        ...productDetails,
+        images: images.map((img) =>
+          this.productImageRepository.create({ url: img }), // TYPEORM infiere y relaciona la imagen con el producto
+        ),
+      }); // se guarda en momoria
+      await this.productRepository.save(product); // ya se, tanto el producto como las imágenes guarda en base datos
       return product;
     } catch (error) {
       this.handleDBExceptions(error);
@@ -71,6 +80,7 @@ export class ProductsService {
         // buscate un producto por el id y agregale las propiedades del dto
         id: id,
         ...updateProductDto,
+        images: [],
       });
 
       if (!product) throw new NotFoundException(`No found product with ${id}`);

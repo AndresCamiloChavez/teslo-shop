@@ -3,8 +3,10 @@ import {
   BeforeUpdate,
   Column,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { ProductImage } from '.';
 
 @Entity()
 export class Product {
@@ -49,7 +51,15 @@ export class Product {
     array: true,
     default: []
   })
+
   tags: string[];
+
+  @OneToMany(
+    () => ProductImage,
+    (productImage) => productImage.product,
+    {cascade: true}
+  )
+  images?: ProductImage[];
 
   @BeforeInsert() // es un método que se ejecuta antes de insertar
   checkSlugInsert() {
