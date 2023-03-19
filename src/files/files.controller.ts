@@ -3,7 +3,7 @@ import { UploadedFile, UseInterceptors } from '@nestjs/common/decorators';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { FilesService } from './files.service';
-import { FileFilter } from './helpers/fileFilter.helper';
+import { FileFilter, FileNamer } from './helpers';
 
 @Controller('files')
 export class FilesController {
@@ -16,6 +16,7 @@ export class FilesController {
       //  limits
       storage: diskStorage({
         destination: './static/products',
+        filename: FileNamer
       }),
     }),
   )
