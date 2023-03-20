@@ -8,7 +8,7 @@ export class User {
   @Column({ name: 'email', type: 'text', unique: true })
   email: string;
 
-  @Column({ name: 'password', type: 'text' })
+  @Column({ name: 'password', type: 'text', select: false }) // cuando se realiza un find no obtiene la contraseña
   password: string;
 
   @Column({ name: 'fullName', type: 'text' })
